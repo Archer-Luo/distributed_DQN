@@ -1,13 +1,13 @@
 from tensorflow.python import keras
 import tensorflow as tf
-import config
+from config import hyperparam
 
 
 def dqn_maker():
-    state_dim = config['state_dim']
-    n_actions = config['n_actions']
-    activation = config['nn_activation']
-    dimension = config['nn_dimension']
+    state_dim = hyperparam['state_dim']
+    n_actions = hyperparam['n_actions']
+    activation = hyperparam['nn_activation']
+    dimension = hyperparam['nn_dimension']
 
     model = keras.Sequential()
     model.add(tf.keras.Input(dimension=state_dim))

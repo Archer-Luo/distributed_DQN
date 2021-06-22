@@ -1,7 +1,7 @@
 import os
 import ray
 import numpy as np
-import config
+from config import hyperparam
 
 
 @ray.remote
@@ -10,11 +10,11 @@ class ReplayBuffer:
     This implementation was heavily inspired by Fabio M. Graetz's replay buffer
     here: https://github.com/fg91/Deep-Q-Learning/blob/master/DQN.ipynb"""
     def __init__(self):
-        state_dim = config['state_dim']
-        self.use_per = config['use_per']
-        self.offset = config['offset']
-        self.size = config['buffer_size']
-        self.input_shape = (state_dim,)
+        self.state_dim = hyperparam['state_dim']
+        self.use_per = hyperparam['use_per']
+        self.offset = hyperparam['offset']
+        self.size = hyperparam['buffer_size']
+        self.input_shape = (self.state_dim,)
         self.count = 0  # total index of memory written to, always less than self.size
         self.current = 0  # index to write to
 
@@ -22,8 +22,11 @@ class ReplayBuffer:
         self.actions = np.empty(self.size, dtype=np.uint8)
         self.rewards = np.empty(self.size, dtype=np.float32)
         self.terminal_flags = np.empty(self.size, dtype=np.bool)
-        self.states = np.empty((self.size, state_dim), dtype=np.uint8)
+        self.states = np.empty((self.size, self.state_dim), dtype=np.uint8)
         self.priorities = np.zeros(self.size, dtype=np.float32)
+
+    def get_count(self):
+        return self.count
 
     def add_experience(self, action, state, reward, terminal):
         """Saves a transition to the replay buffer
@@ -46,7 +49,7 @@ class ReplayBuffer:
         self.count = max(self.count, self.current+1)
         self.current = (self.current + 1) % self.size
 
-    def get_minibatch(self):
+    def get_minibatch(self, priority_scale):
         """
         Returns:
             A tuple of states, actions, rewards, new_states, and terminals
@@ -54,16 +57,15 @@ class ReplayBuffer:
                 An array describing the importance of transition. Used for scaling gradient steps.
                 An array of each index that was sampled
         """
-        batch_size = config['batch_size']
-        priority_scale = config['priority_scale']
-        if self.count - 1 < batch_size:
+
+        if self.count - 1 < self.batch_size:
             raise ValueError('Not enough memories to get a minibatch')
 
         # Get sampling probabilities from priority list and get a list of indices
         if self.use_per:
             scaled_priorities = self.priorities[0:self.count-1] ** priority_scale
             sample_probabilities = scaled_priorities / sum(scaled_priorities)
-            indices = np.random.choice(self.count-1, size=batch_size, replace=False, p=sample_probabilities)
+            indices = np.random.choice(self.count-1, size=self.batch_size, replace=False, p=sample_probabilities)
             importance = 1 / self.count * 1 / sample_probabilities[indices]
             importance = importance / importance.max()
             # Retrieve states from memory
@@ -73,7 +75,7 @@ class ReplayBuffer:
             return (states, self.actions[indices], self.rewards[indices], new_states,
                     self.terminal_flags[indices]), importance, indices
         else:
-            indices = np.random.choice(self.count-1, size=batch_size, replace=False)
+            indices = np.random.choice(self.count-1, size=self.batch_size, replace=False)
             # Retrieve states from memory
             states = self.states[indices, ...]
             new_states = self.states[indices + 1, ...]
