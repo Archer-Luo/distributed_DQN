@@ -31,6 +31,5 @@ class ParamServer:
         self.update_step += 1
         print(self.update_step)
 
-
     def get_update_step(self):
         return self.update_step

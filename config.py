@@ -10,8 +10,8 @@ hyperparam = {
     'nn_dimension': [10, 10, 10],
     'nn_activation': 'tanh',
 
-    'num_workers': 8,
-    'num_learners': 1,
+    # 'num_workers': 8,
+    # 'num_learners': 1,
     'num_bundle': 2,
 
     'max_update_steps': 100000,
@@ -33,7 +33,7 @@ hyperparam = {
     'buffer_size': 10000,
     'actor_buffer_size': 1000,
     'batch_size': 128,
-    'use_per': True,
+    'use_per': False,
 
     'offset': 0.1
 }

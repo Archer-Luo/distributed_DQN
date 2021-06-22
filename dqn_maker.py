@@ -15,6 +15,6 @@ def dqn_maker():
         model.add(tf.keras.layers.Dense(i, activation=activation))
     model.add(tf.keras.layers.Dense(n_actions))
 
-    model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer='adam')
+    model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer='adam')  # TODO
 
     return model

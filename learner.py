@@ -31,11 +31,11 @@ class Learner:
         self.gamma = hyperparam['gamma']
 
     def sync_dqn(self):
-        new_weights = ray.get(self.param_server.getweights.remote())
+        new_weights = ray.get(self.param_server.get_weights.remote())
         self.dqn.set_weights(new_weights)
 
     def sync_target_dqn(self):
-        new_weights = ray.get(self.param_server.getweights.remote())
+        new_weights = ray.get(self.param_server.get_weights.remote())
         self.target_dqn.set_weights(new_weights)
 
     def run(self):
@@ -50,6 +50,12 @@ class Learner:
         update_done = 0
 
         while t < self.max_update_steps:
+            if update_done % self.sync_frequency == 0:
+                self.sync_dqn()
+
+            if update_done % self.C == 0:
+                self.sync_target_dqn()
+
             if self.use_per:
                 (states, actions, rewards, new_states,
                  terminal_flags), importance, indices = self.replay_buffer.get_minibatch.remote(
@@ -85,22 +91,16 @@ class Learner:
 
             model_gradients = tape.gradient(loss, self.dqn.trainable_variables)
             gradients_numpy = []
-            sess = tf.Session()
-            with sess.as_default():
-                for variable in model_gradients:
-                    gradients_numpy.append(variable.eval())
+            for variable in model_gradients:
+                gradients_numpy.append(variable.numpy())
 
             self.param_server.update_weights.remote(gradients_numpy)
 
             if self.use_per:
                 self.replay_buffer.set_priorities(indices, error)
 
-            if update_done % self.sync_frequency == 0:
-                self.sync_dqn()
-
-            if update_done % self.C == 0:
-                self.sync_target_dqn()
-
             update_done += 1
 
-        return float(loss.numpy()), error
+            print(float(loss.numpy()))
+
+        print("learner exits")
