@@ -48,6 +48,7 @@ class ReplayBuffer:
         self.priorities[self.current] = max(np.amax(self.priorities), 1.0)  # make the most recent experience important
         self.count = max(self.count, self.current+1)
         self.current = (self.current + 1) % self.size
+        print("experience added", flush=True)
 
     def get_minibatch(self, priority_scale):
         """

@@ -22,7 +22,7 @@ class Actor:
         self.sync_freq = hyperparam['sync_freq']
 
     def sync_with_param_server(self):
-        new_weights = self.param_server.get_weights.remote()
+        new_weights = ray.get(self.param_server.get_weights.remote())
         self.q_network.set_weights(new_weights)
 
     def store(self, action, state, reward, terminal):
@@ -55,7 +55,7 @@ class Actor:
 
         current_state = np.copy(start_state)
         h = np.array(hyperparam['h'])
-        t = self.param_server.get_update_step.remote()
+        t = ray.get(self.param_server.get_update_step.remote())
 
         experience_generated = 0
 
@@ -67,14 +67,15 @@ class Actor:
             next_state = self.env.next_state_N1(current_state, action)
             reward = -(current_state @ h)
             terminal = (t == self.max_update_steps - 1)
-            self.replay_buffer.add_experience.remote(action, current_state, reward, terminal)
+            ray.get(self.replay_buffer.add_experience.remote(action, current_state, reward, terminal))  # TODO
 
             experience_generated += 1
 
             current_state = next_state
-            t = self.param_server.get_update_step.remote()
+            t = ray.get(self.param_server.get_update_step.remote())
+            print(t, flush=True)
 
-        print('actor exits')
+        print('actor exits', flush=True)
 
 
 

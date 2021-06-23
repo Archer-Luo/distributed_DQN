@@ -39,7 +39,7 @@ class Learner:
         self.target_dqn.set_weights(new_weights)
 
     def run(self):
-        self.dqn.set_weights(self.param_server.get_weights.remote())
+        self.dqn.set_weights(ray.get(self.param_server.get_weights.remote()))
         self.target_dqn.set_weights(self.dqn.get_weights())
 
         while ray.get(self.buffer_remote.get_count.remote()) - 1 < self.batch_size:
@@ -58,12 +58,12 @@ class Learner:
 
             if self.use_per:
                 (states, actions, rewards, new_states,
-                 terminal_flags), importance, indices = self.replay_buffer.get_minibatch.remote(
-                    priority_scale=self.priority_scale)
+                 terminal_flags), importance, indices = ray.get(self.replay_buffer.get_minibatch.remote(
+                    priority_scale=self.priority_scale))
                 importance = importance ** (1 - calc_epsilon(t, False))
             else:
-                states, actions, rewards, new_states, terminal_flags = self.replay_buffer.get_minibatch(
-                    batch_size=self.batch_size, priority_scale=self.priority_scale)
+                states, actions, rewards, new_states, terminal_flags = ray.get(self.replay_buffer.get_minibatch.remote(
+                    batch_size=self.batch_size, priority_scale=self.priority_scale))
 
             # Target DQN estimates q-vals for new states
             target_future_v = np.amax(self.target_dqn.predict(new_states).squeeze(), axis=1)
@@ -100,7 +100,8 @@ class Learner:
                 self.replay_buffer.set_priorities(indices, error)
 
             update_done += 1
+            t = ray.get(self.param_server.get_update_step.remote())
 
-            print(float(loss.numpy()))
+            print(float(loss.numpy()), flush=True)
 
-        print("learner exits")
+        print("learner exits", flush=True)

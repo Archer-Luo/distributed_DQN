@@ -29,7 +29,7 @@ class ParamServer:
     def update_weights(self, new_weights):
         [x + y for x, y in zip(self.weights, new_weights)]
         self.update_step += 1
-        print(self.update_step)
+        print(self.update_step, flush=True)
 
     def get_update_step(self):
         return self.update_step
