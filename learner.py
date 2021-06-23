@@ -42,7 +42,7 @@ class Learner:
         self.dqn.set_weights(ray.get(self.param_server.get_weights.remote()))
         self.target_dqn.set_weights(self.dqn.get_weights())
 
-        while ray.get(self.buffer_remote.get_count.remote()) - 1 < self.batch_size:
+        while ray.get(self.replay_buffer.get_count.remote()) - 1 < self.batch_size:
             continue
 
         t = ray.get(self.param_server.get_update_step.remote())
