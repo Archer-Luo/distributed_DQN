@@ -13,14 +13,24 @@ def xavier_numpy(fan_in, fan_out):
 @ray.remote
 class ParamServer:
     def __init__(self):
-        n_actions = hyperparam['n_actions']
-        dimension = hyperparam['nn_dimension']
-        weights = [xavier_numpy(n_actions, dimension[0])]
-        for i in range(len(dimension) - 1):
-            weights.append(xavier_numpy(dimension[i], dimension[i + 1]))
-        weights.append(xavier_numpy(dimension[len(dimension) - 1], n_actions))
+        self.state_dim = hyperparam['state_dim']
+        self.n_actions = hyperparam['n_actions']
+        self.dimension = hyperparam['nn_dimension']
+        weights = [xavier_numpy(self.state_dim, self.dimension[0])]
+        for i in range(len(self.dimension) - 1):
+            weights.append(xavier_numpy(self.dimension[i], self.dimension[i + 1]))
+        weights.append(xavier_numpy(self.dimension[len(self.dimension) - 1], self.n_actions))
 
-        self.weights = weights
+        list1 = weights
+        list2 = []
+        for i in self.dimension:
+            list2.append(np.zeros(i))
+        list2.append(np.zeros(self.n_actions))
+        result = [None] * (len(list1) + len(list2))
+        result[::2] = list1
+        result[1::2] = list2
+
+        self.weights = result
         self.update_step = 0
 
     def get_weights(self):
@@ -33,3 +43,9 @@ class ParamServer:
 
     def get_update_step(self):
         return self.update_step
+
+
+# ray.init()
+# parameter_server = ParamServer.remote()
+# weights = parameter_server.get_weights.remote()
+# print("done")

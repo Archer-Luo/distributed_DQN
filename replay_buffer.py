@@ -48,9 +48,8 @@ class ReplayBuffer:
         self.priorities[self.current] = max(np.amax(self.priorities), 1.0)  # make the most recent experience important
         self.count = max(self.count, self.current+1)
         self.current = (self.current + 1) % self.size
-        print("experience added", flush=True)
 
-    def get_minibatch(self, priority_scale):
+    def get_minibatch(self, batch_size, priority_scale):
         """
         Returns:
             A tuple of states, actions, rewards, new_states, and terminals
@@ -59,14 +58,14 @@ class ReplayBuffer:
                 An array of each index that was sampled
         """
 
-        if self.count - 1 < self.batch_size:
+        if self.count - 1 < batch_size:
             raise ValueError('Not enough memories to get a minibatch')
 
         # Get sampling probabilities from priority list and get a list of indices
         if self.use_per:
             scaled_priorities = self.priorities[0:self.count-1] ** priority_scale
             sample_probabilities = scaled_priorities / sum(scaled_priorities)
-            indices = np.random.choice(self.count-1, size=self.batch_size, replace=False, p=sample_probabilities)
+            indices = np.random.choice(self.count-1, size=batch_size, replace=False, p=sample_probabilities)
             importance = 1 / self.count * 1 / sample_probabilities[indices]
             importance = importance / importance.max()
             # Retrieve states from memory
@@ -76,7 +75,7 @@ class ReplayBuffer:
             return (states, self.actions[indices], self.rewards[indices], new_states,
                     self.terminal_flags[indices]), importance, indices
         else:
-            indices = np.random.choice(self.count-1, size=self.batch_size, replace=False)
+            indices = np.random.choice(self.count-1, size=batch_size, replace=False)
             # Retrieve states from memory
             states = self.states[indices, ...]
             new_states = self.states[indices + 1, ...]

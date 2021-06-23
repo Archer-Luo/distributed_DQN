@@ -4,24 +4,17 @@ from actor import Actor
 from parameter_server import ParamServer
 from learner import Learner
 import ray
+from worker import Worker
 
 
 def main():
     parameter_server = ParamServer.remote()
-    replay_buffers = []
-    actors = []
-    learners = []
-    for _ in range(hyperparam['num_bundle']):
-        replay_buffers.append(ReplayBuffer.remote())
-    for replay_buffer in replay_buffers:
-        actors.append(Actor.remote(replay_buffer, parameter_server))
-        learners.append(Learner.remote(replay_buffer, parameter_server))
-    for actor, learner in zip(actors, learners):
-        actor.run.remote()
-        learner.run.remote()
+    replay_buffer = ReplayBuffer.remote()
+    workers = [Worker.remote(replay_buffer, parameter_server) for _ in range(hyperparam['num_bundle'])]
+    return ray.get([worker.run.remote() for worker in workers])
 
 
 ray.init()
 
 if __name__ == "__main__":
-    main()
+    print(main())

@@ -26,6 +26,7 @@ class Learner:
         # buffer info
         self.use_per = hyperparam['use_per']
         self.priority_scale = hyperparam['priority_scale']
+        self.batch_size = hyperparam['batch_size']
 
         # hyper-parameters
         self.gamma = hyperparam['gamma']
@@ -97,7 +98,7 @@ class Learner:
             self.param_server.update_weights.remote(gradients_numpy)
 
             if self.use_per:
-                self.replay_buffer.set_priorities(indices, error)
+                self.replay_buffer.set_priorities.remote(indices, error)
 
             update_done += 1
             t = ray.get(self.param_server.get_update_step.remote())

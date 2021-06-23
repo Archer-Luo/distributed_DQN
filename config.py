@@ -12,10 +12,9 @@ hyperparam = {
 
     # 'num_workers': 8,
     # 'num_learners': 1,
-    'num_bundle': 2,
+    'num_bundle': 8,
 
-    'max_update_steps': 100000,
-    'sync_freq': 1,
+    'max_update_steps': 10000,
     'C': 50,
 
     'gamma': 0.995,
@@ -25,15 +24,14 @@ hyperparam = {
     'eps_final_state': 0.1,
     'eps_evaluation': 0.0,
     'replay_buffer_start_size': 512,
-    'eps_annealing_states': 2000,
+    'eps_annealing_states': 4000,
 
     'priority_scale': 0.7,
 
     # Buffer parameters
     'buffer_size': 10000,
-    'actor_buffer_size': 1000,
     'batch_size': 128,
-    'use_per': False,
+    'use_per': True,
 
     'offset': 0.1
 }
