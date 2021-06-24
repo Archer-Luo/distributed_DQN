@@ -23,7 +23,7 @@ class ReplayBuffer:
         self.rewards = np.empty(self.size, dtype=np.float32)
         self.terminal_flags = np.empty(self.size, dtype=np.bool)
         self.states = np.empty((self.size, self.state_dim), dtype=np.uint8)
-        self.priorities = np.zeros(self.size, dtype=np.float32)
+        self.priorities = np.ones(self.size, dtype=np.float32)
 
     def get_count(self):
         return self.count
@@ -64,10 +64,10 @@ class ReplayBuffer:
         # Get sampling probabilities from priority list and get a list of indices
         if self.use_per:
             scaled_priorities = self.priorities[0:self.count-1] ** priority_scale
-            sample_probabilities = scaled_priorities / sum(scaled_priorities)
-            indices = np.random.choice(self.count-1, size=batch_size, replace=False, p=sample_probabilities)
-            importance = 1 / self.count * 1 / sample_probabilities[indices]
-            importance = importance / importance.max()
+            sample_probabilities = scaled_priorities / np.sum(scaled_priorities)
+            indices = np.random.choice(self.count-1, size=batch_size, replace=False, p=sample_probabilities.flatten())
+            importance = np.reciprocal(self.count * sample_probabilities[indices])
+            importance = importance / np.amax(importance)
             # Retrieve states from memory
             states = self.states[indices, ...]
             new_states = self.states[indices + 1, ...]
@@ -88,8 +88,8 @@ class ReplayBuffer:
             indices: Indices to update
             errors: For each index, the error between the target Q-vals and the predicted Q-vals
         """
-        for i, e in zip(indices, errors):
-            self.priorities[i] = abs(e) + self.offset
+        for i in indices.tolist():
+            self.priorities[i] = abs(errors[i]) + self.offset
 
     def save(self, folder_name):
         """Save the replay buffer to a folder"""
