@@ -5,6 +5,8 @@ from config import hyperparam
 from dqn_maker import dqn_maker
 from calc_epsilon import calc_epsilon
 from NmodelDynamics import ProcessingNetwork
+import time
+import random
 
 
 @ray.remote
@@ -37,7 +39,6 @@ class Worker:
 
         self.current_state = np.array(hyperparam['start_state'])
         self.t = 0
-        self.update_done = 0
 
     def store(self, action, state, reward, terminal):
         self.replay_buffer.add_experience.remote(action, state, reward, terminal)
@@ -55,18 +56,17 @@ class Worker:
         return action
 
     def sync_dqn(self):
-        new_weights = ray.get(self.param_server.get_weights.remote())
+        new_weights = self.param_server.get_weights()
         self.dqn.set_weights(new_weights)
 
     def sync_target_dqn(self):
-        new_weights = ray.get(self.param_server.get_weights.remote())
+        new_weights = self.param_server.get_weights()
         self.target_dqn.set_weights(new_weights)
 
     def run(self):
+        time.sleep(random.randint(0, 10))
         self.target_dqn.set_weights(self.dqn.get_weights())
-        self.dqn.set_weights(ray.get(self.param_server.get_weights.remote()))
-
-        self.t = ray.get(self.param_server.get_update_step.remote())
+        self.dqn.set_weights(self.param_server.get_weights())
 
         while self.t < self.max_update_steps:
             action = self.get_action(self.t, self.current_state, False)
@@ -100,14 +100,14 @@ class Worker:
             # Use targets to calculate loss (and use loss to calculate gradients)
             with tf.GradientTape() as tape:
 
-                q_values = tf.squeeze(self.dqn(states))
+                q_values = self.dqn(states)
 
                 one_hot_actions = tf.keras.utils.to_categorical(actions, self.n_actions,
                                                                 dtype=np.float32)
                 Q = tf.reduce_sum(tf.multiply(q_values, one_hot_actions), axis=1)
 
                 error = Q - target_q
-                loss = tf.keras.losses.Huber(delta=1.35)(target_q, Q)
+                loss = tf.keras.losses.MeanSquaredError()(target_q, Q)
 
                 if self.use_per:
                     # Multiply the loss by importance, so that the gradient is also scaled.
@@ -120,16 +120,17 @@ class Worker:
             for variable in model_gradients:
                 gradients_numpy.append(variable.numpy())
 
-            self.param_server.update_weights.remote(gradients_numpy)
+            self.param_server.update_weights(gradients_numpy)
 
             if self.use_per:
-                self.replay_buffer.set_priorities.remote(indices, error)
+                self.replay_buffer.set_priorities.remote(indices, error.numpy())
 
-            self.update_done += 1
+            self.t += 1
 
-            if self.update_done % self.C == 0:
+            if self.t % self.C == 0:
                 self.sync_target_dqn()
+                print(('{}' + ': ' + '{:10.5f}').format(self.t, loss), flush=True)
 
-            self.t = ray.get(self.param_server.get_update_step.remote())
+
 
         return "done"
