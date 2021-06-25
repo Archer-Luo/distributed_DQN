@@ -116,11 +116,11 @@ class Worker:
                     loss = tf.reduce_mean(loss * importance)
 
             model_gradients = tape.gradient(loss, self.dqn.trainable_variables)
-            gradients_numpy = []
-            for variable in model_gradients:
-                gradients_numpy.append(variable.numpy())
+            # gradients_numpy = []
+            # for variable in model_gradients:
+            #     gradients_numpy.append(variable.numpy())
 
-            self.param_server.update_weights.remote(gradients_numpy)
+            self.param_server.update_weights.remote(model_gradients)
 
             if self.use_per:
                 self.replay_buffer.set_priorities.remote(indices, error.numpy())
