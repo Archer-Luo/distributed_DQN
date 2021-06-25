@@ -131,6 +131,4 @@ class Worker:
                 self.sync_target_dqn()
                 print(('{}' + ': ' + '{:10.5f}').format(self.t, loss), flush=True)
 
-
-
         return "done"

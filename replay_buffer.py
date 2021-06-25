@@ -88,8 +88,9 @@ class ReplayBuffer:
             indices: Indices to update
             errors: For each index, the error between the target Q-vals and the predicted Q-vals
         """
-        for i in indices.tolist():
-            self.priorities[i] = abs(errors[i]) + self.offset
+        assert np.size(indices) == np.size(errors)
+        for i in range(np.size(indices)):
+            self.priorities[indices[i]] = abs(errors[i]) + self.offset
 
     def save(self, folder_name):
         """Save the replay buffer to a folder"""
