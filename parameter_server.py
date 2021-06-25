@@ -6,8 +6,8 @@ import math
 
 def xavier_numpy(fan_in, fan_out):
     limit = math.sqrt(6 / (fan_in + fan_out))
-    weights = np.random.uniform(-limit, limit, size=(fan_in, fan_out))
-    return weights
+    weight = np.random.uniform(-limit, limit, size=(fan_in, fan_out))
+    return weight
 
 
 @ray.remote
@@ -31,21 +31,18 @@ class ParamServer:
         result[1::2] = list2
 
         self.weights = result
-        self.update_step = 0
+        self.t = 0
 
     def get_weights(self):
         return self.weights
 
-    def update_weights(self, new_weights):
-        [x + y for x, y in zip(self.weights, new_weights)]
-        self.update_step += 1
-        print(self.update_step, flush=True)
-
-    def get_update_step(self):
-        return self.update_step
+    def update_weights(self, gradient):
+        self.weights = [x + y for x, y in zip(self.weights, gradient)]
+        self.t += 1
+        print(self.t)
 
 
 # ray.init()
 # parameter_server = ParamServer.remote()
-# weights = parameter_server.get_weights.remote()
+# weights = ray.get(parameter_server.get_weights.remote())
 # print("done")

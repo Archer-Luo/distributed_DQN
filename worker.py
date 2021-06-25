@@ -56,17 +56,17 @@ class Worker:
         return action
 
     def sync_dqn(self):
-        new_weights = self.param_server.get_weights()
+        new_weights = ray.get(self.param_server.get_weights.remote())
         self.dqn.set_weights(new_weights)
 
     def sync_target_dqn(self):
-        new_weights = self.param_server.get_weights()
+        new_weights = ray.get(self.param_server.get_weights.remote())
         self.target_dqn.set_weights(new_weights)
 
     def run(self):
         time.sleep(random.randint(0, 10))
         self.target_dqn.set_weights(self.dqn.get_weights())
-        self.dqn.set_weights(self.param_server.get_weights())
+        self.dqn.set_weights(ray.get(self.param_server.get_weights.remote()))
 
         while self.t < self.max_update_steps:
             action = self.get_action(self.t, self.current_state, False)
@@ -120,7 +120,7 @@ class Worker:
             for variable in model_gradients:
                 gradients_numpy.append(variable.numpy())
 
-            self.param_server.update_weights(gradients_numpy)
+            self.param_server.update_weights.remote(gradients_numpy)
 
             if self.use_per:
                 self.replay_buffer.set_priorities.remote(indices, error.numpy())

@@ -15,10 +15,12 @@ def dqn_maker():
         model.add(tf.keras.layers.Dense(i, activation=activation))
     model.add(tf.keras.layers.Dense(n_actions))
 
-    model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer='adam')  # TODO
+    model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer=tf.keras.optimizers.Adam(learning_rate=0.00005, epsilon=0.001))  # TODO
 
     return model
 
 
 # dqn = dqn_maker()
-# print("done")
+# trainable_var = dqn.trainable_variables
+# weights = dqn.get_weights()
+# print('done')
