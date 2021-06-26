@@ -4,7 +4,7 @@ import numpy as np
 from config import hyperparam
 
 
-@ray.remote
+@ray.remote(num_gpus=1)
 class ReplayBuffer:
     """Replay Buffer to store transitions.
     This implementation was heavily inspired by Fabio M. Graetz's replay buffer

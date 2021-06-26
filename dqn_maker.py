@@ -1,4 +1,3 @@
-from tensorflow.python import keras
 import tensorflow as tf
 from config import hyperparam
 
@@ -9,13 +8,13 @@ def dqn_maker():
     activation = hyperparam['nn_activation']
     dimension = hyperparam['nn_dimension']
 
-    model = keras.Sequential()
+    model = tf.keras.Sequential()
     model.add(tf.keras.Input(shape=(state_dim,)))
     for i in dimension:
         model.add(tf.keras.layers.Dense(i, activation=activation))
     model.add(tf.keras.layers.Dense(n_actions))
 
-    model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer=tf.keras.optimizers.Adam(learning_rate=0.00005, epsilon=0.001))  # TODO
+    model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer='adam')  # TODO
 
     return model
 

@@ -9,7 +9,7 @@ import time
 import random
 
 
-@ray.remote
+@ray.remote(num_cpus=0.25)
 class Worker:
 
     def __init__(self, replay_buffer, param_server):

@@ -7,22 +7,23 @@ import numpy as np
 from dqn_maker import dqn_maker
 from NN_parameter_server import NNParamServer
 
+
 def main():
     # parameter_server = ParamServer.remote()
     parameter_server = NNParamServer.remote()
     replay_buffer = ReplayBuffer.remote()
     workers = [Worker.remote(replay_buffer, parameter_server) for _ in range(hyperparam['num_bundle'])]
-    ray.get([worker.run.remote() for worker in workers])
+    print(ray.get([worker.run.remote() for worker in workers]))
 
     final_weights = ray.get(parameter_server.get_weights.remote())
     # np.savetxt('final_weights.npy', final_weights, fmt='%10.5f', delimiter=",")
 
     evaluate_dqn = dqn_maker()
     evaluate_dqn.set_weights(final_weights)
-    action_result = np.empty([50, 50])
-    v_result = np.empty([50, 50])
-    for a in range(50):
-        for b in range(50):
+    action_result = np.empty([10, 10])
+    v_result = np.empty([10, 10])
+    for a in range(10):
+        for b in range(10):
             state = np.array([a, b])
             values = evaluate_dqn.predict(np.expand_dims(state, axis=0)).squeeze()
             action_result[a][b] = np.argmax(values) + 1
@@ -35,7 +36,7 @@ def main():
 
 start_time = time.time()
 
-ray.init(num_cpus=11, num_gpus=1)
+ray.init(num_cpus=12, num_gpus=1)
 
 if __name__ == "__main__":
     main()
