@@ -22,6 +22,7 @@ class Worker:
         self.dqn = dqn_maker()
         self.target_dqn = dqn_maker()
 
+        self.replay_buffer_start_size = hyperparam['replay_buffer_start_size']
         self.max_update_steps = hyperparam['max_update_steps']
         self.C = hyperparam['C']
 
@@ -68,7 +69,7 @@ class Worker:
         self.target_dqn.set_weights(self.dqn.get_weights())
         self.dqn.set_weights(ray.get(self.param_server.get_weights.remote()))
 
-        while self.t < self.max_update_steps:
+        while ray.get(self.replay_buffer.get_count.remote()) < self.replay_buffer_start_size + 1:
             action = self.get_action(self.t, self.current_state, False)
             next_state = self.env.next_state_N1(self.current_state, action)
             reward = -(self.current_state @ self.h)
@@ -77,8 +78,18 @@ class Worker:
 
             self.current_state = next_state
 
-            if ray.get(self.replay_buffer.get_count.remote()) - 1 < self.batch_size:
-                continue
+            self.sync_dqn()
+
+            self.t += 1
+
+        while self.t < self.max_update_steps:
+            action = self.get_action(self.t, self.current_state, False)
+            next_state = self.env.next_state_N1(self.current_state, action)
+            reward = -(self.current_state @ self.h)
+            terminal = (self.t == self.max_update_steps - 1)
+            self.replay_buffer.add_experience.remote(action, self.current_state, reward, terminal)  # TODO
+
+            self.current_state = next_state
 
             self.sync_dqn()
 
@@ -131,4 +142,4 @@ class Worker:
                 self.sync_target_dqn()
                 print(('{}' + ': ' + '{:10.5f}').format(self.t, loss), flush=True)
 
-        return "done"
+        return ray.get(self.param_server.get_weights.remote())

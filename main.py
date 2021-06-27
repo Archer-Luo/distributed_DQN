@@ -13,17 +13,18 @@ def main():
     parameter_server = NNParamServer.remote()
     replay_buffer = ReplayBuffer.remote()
     workers = [Worker.remote(replay_buffer, parameter_server) for _ in range(hyperparam['num_bundle'])]
-    print(ray.get([worker.run.remote() for worker in workers]))
+    ready_id, remaining_ids = ray.wait([worker.run.remote() for worker in workers], num_returns=1)
+    final_weights = ray.get(ready_id[0])
 
-    final_weights = ray.get(parameter_server.get_weights.remote())
-    # np.savetxt('final_weights.npy', final_weights, fmt='%10.5f', delimiter=",")
+    with open('final_weights.txt', 'w') as f:
+        print(final_weights, file=f)
 
     evaluate_dqn = dqn_maker()
     evaluate_dqn.set_weights(final_weights)
     action_result = np.empty([10, 10])
     v_result = np.empty([10, 10])
-    for a in range(10):
-        for b in range(10):
+    for a in range(50):
+        for b in range(50):
             state = np.array([a, b])
             values = evaluate_dqn.predict(np.expand_dims(state, axis=0)).squeeze()
             action_result[a][b] = np.argmax(values) + 1

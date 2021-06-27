@@ -12,9 +12,10 @@ def dqn_maker():
     model.add(tf.keras.Input(shape=(state_dim,)))
     for i in dimension:
         model.add(tf.keras.layers.Dense(i, activation=activation))
+    model.add(tf.keras.layers.Dropout(rate=0.2))
     model.add(tf.keras.layers.Dense(n_actions))
 
-    model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer='adam')  # TODO
+    model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer=tf.keras.optimizers.Adam(learning_rate=0.000005))  # TODO
 
     return model
 
