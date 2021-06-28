@@ -21,8 +21,8 @@ def main():
 
     evaluate_dqn = dqn_maker()
     evaluate_dqn.set_weights(final_weights)
-    action_result = np.empty([10, 10])
-    v_result = np.empty([10, 10])
+    action_result = np.empty([50, 50])
+    v_result = np.empty([50, 50])
     for a in range(50):
         for b in range(50):
             state = np.array([a, b])
