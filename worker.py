@@ -69,7 +69,7 @@ class Worker:
         self.target_dqn.set_weights(self.dqn.get_weights())
         self.dqn.set_weights(ray.get(self.param_server.get_weights.remote()))
 
-        while ray.get(self.replay_buffer.get_count.remote()) < self.replay_buffer_start_size + 1:
+        while self.t < self.replay_buffer_start_size + 1:
             action = self.get_action(self.t, self.current_state, False)
             next_state = self.env.next_state_N1(self.current_state, action)
             reward = -(self.current_state @ self.h)
