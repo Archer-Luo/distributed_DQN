@@ -12,7 +12,7 @@ hyperparam = {
 
     # 'num_workers': 8,
     # 'num_learners': 1,
-    'num_bundle': 20,
+    'num_bundle': 10,
 
     'max_update_steps': 20000,
     'C': 50,

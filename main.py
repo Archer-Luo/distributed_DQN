@@ -37,7 +37,7 @@ def main():
 
 start_time = time.time()
 
-ray.init(num_cpus=12, num_gpus=1)
+ray.init(num_cpus=5, num_gpus=1)
 
 if __name__ == "__main__":
     main()

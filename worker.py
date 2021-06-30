@@ -9,7 +9,7 @@ import time
 import random
 
 
-@ray.remote(num_cpus=0.25)
+@ray.remote(num_cpus=0.5)
 class Worker:
 
     def __init__(self, replay_buffer, param_server):
@@ -70,8 +70,7 @@ class Worker:
             action = self.get_action(self.t, self.current_state, False)
             next_state = self.env.next_state_N1(self.current_state, action)
             reward = -(self.current_state @ self.h)
-            terminal = (self.t == self.max_update_steps - 1)
-            self.replay_buffer.add_experience.remote(action, self.current_state, next_state, reward, terminal)  # TODO
+            self.replay_buffer.add_experience.remote(action, self.current_state, next_state, reward)  # TODO
 
             self.current_state = next_state
 
@@ -83,27 +82,25 @@ class Worker:
             action = self.get_action(self.t, self.current_state, False)
             next_state = self.env.next_state_N1(self.current_state, action)
             reward = -(self.current_state @ self.h)
-            terminal = (self.t == self.max_update_steps - 1)
-            self.replay_buffer.add_experience.remote(action, self.current_state, next_state, reward, terminal)  # TODO
+            self.replay_buffer.add_experience.remote(action, self.current_state, next_state, reward)  # TODO
 
             self.current_state = next_state
 
             self.sync_dqn()
 
             if self.use_per:
-                (states, actions, rewards, new_states,
-                 terminal_flags), importance, indices = ray.get(self.replay_buffer.get_minibatch.remote(
+                (states, actions, rewards, new_states), importance, indices = ray.get(self.replay_buffer.get_minibatch.remote(
                     batch_size=self.batch_size, priority_scale=self.priority_scale))
                 importance = importance ** (1 - calc_epsilon(self.t, False))
             else:
-                states, actions, rewards, new_states, terminal_flags = ray.get(self.replay_buffer.get_minibatch.remote(
+                states, actions, rewards, new_states = ray.get(self.replay_buffer.get_minibatch.remote(
                     batch_size=self.batch_size, priority_scale=self.priority_scale))
 
             # Target DQN estimates q-vals for new states
             target_future_v = np.amax(self.target_dqn.predict(new_states).squeeze(), axis=1)
 
             # Calculate targets (bellman equation)
-            target_q = rewards + (self.gamma * target_future_v * (1 - terminal_flags))
+            target_q = rewards + (self.gamma * target_future_v)
 
             # Use targets to calculate loss (and use loss to calculate gradients)
             with tf.GradientTape() as tape:

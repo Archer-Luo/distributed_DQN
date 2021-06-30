@@ -4,7 +4,7 @@ import numpy as np
 from config import hyperparam
 
 
-@ray.remote(num_gpus=1)
+@ray.remote(num_gpus=0.75)
 class ReplayBuffer:
     """Replay Buffer to store transitions.
     This implementation was heavily inspired by Fabio M. Graetz's replay buffer
@@ -21,7 +21,6 @@ class ReplayBuffer:
         # Pre-allocate memory
         self.actions = np.empty(self.size, dtype=np.uint8)
         self.rewards = np.empty(self.size, dtype=np.float32)
-        self.terminal_flags = np.empty(self.size, dtype=np.bool)
         self.states = np.empty((self.size, self.state_dim), dtype=np.uint8)
         self.next_states = np.empty((self.size, self.state_dim), dtype=np.uint8)
         self.priorities = np.ones(self.size, dtype=np.float32)
@@ -29,7 +28,7 @@ class ReplayBuffer:
     def get_count(self):
         return self.count
 
-    def add_experience(self, action, state, next_state, reward, terminal):
+    def add_experience(self, action, state, next_state, reward):
         """Saves a transition to the replay buffer
         Arguments:
             action: An integer between 0 and env.action_space.n - 1
@@ -47,7 +46,6 @@ class ReplayBuffer:
         self.states[self.current, ...] = state
         self.next_states[self.current, ...] = next_state
         self.rewards[self.current] = reward
-        self.terminal_flags[self.current] = terminal
         self.priorities[self.current] = max(np.amax(self.priorities), 1.0)  # make the most recent experience important
         self.count = max(self.count, self.current+1)
         self.current = (self.current + 1) % self.size
@@ -75,15 +73,14 @@ class ReplayBuffer:
             states = self.states[indices, ...]
             new_states = self.next_states[indices, ...]
 
-            return (states, self.actions[indices], self.rewards[indices], new_states,
-                    self.terminal_flags[indices]), importance, indices
+            return (states, self.actions[indices], self.rewards[indices], new_states), importance, indices
         else:
             indices = np.random.choice(self.count-1, size=batch_size, replace=False)
             # Retrieve states from memory
             states = self.states[indices, ...]
             new_states = self.next_states[indices, ...]
 
-            return states, self.actions[indices], self.rewards[indices], new_states, self.terminal_flags[indices]
+            return states, self.actions[indices], self.rewards[indices], new_states
 
     def set_priorities(self, indices, errors):
         """Update priorities for PER

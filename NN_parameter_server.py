@@ -2,7 +2,7 @@ from dqn_maker import dqn_maker
 import ray
 
 
-@ray.remote(num_cpus=0.25)
+@ray.remote(num_gpus=0.25)
 class NNParamServer:
     def __init__(self):
         self.model = dqn_maker()
