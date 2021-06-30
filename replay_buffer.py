@@ -23,17 +23,19 @@ class ReplayBuffer:
         self.rewards = np.empty(self.size, dtype=np.float32)
         self.terminal_flags = np.empty(self.size, dtype=np.bool)
         self.states = np.empty((self.size, self.state_dim), dtype=np.uint8)
+        self.next_states = np.empty((self.size, self.state_dim), dtype=np.uint8)
         self.priorities = np.ones(self.size, dtype=np.float32)
 
     def get_count(self):
         return self.count
 
-    def add_experience(self, action, state, reward, terminal):
+    def add_experience(self, action, state, next_state, reward, terminal):
         """Saves a transition to the replay buffer
         Arguments:
             action: An integer between 0 and env.action_space.n - 1
                 determining the action the agent performed
             state: A (1, 2) state
+            next_state: A (1, 2) state
             reward: A float determining the reward the agent received for performing an action
             terminal: A bool stating whether the episode terminated
         """
@@ -43,6 +45,7 @@ class ReplayBuffer:
         # Write memory
         self.actions[self.current] = action
         self.states[self.current, ...] = state
+        self.next_states[self.current, ...] = next_state
         self.rewards[self.current] = reward
         self.terminal_flags[self.current] = terminal
         self.priorities[self.current] = max(np.amax(self.priorities), 1.0)  # make the most recent experience important
@@ -70,7 +73,7 @@ class ReplayBuffer:
             importance = importance / np.amax(importance)
             # Retrieve states from memory
             states = self.states[indices, ...]
-            new_states = self.states[indices + 1, ...]
+            new_states = self.next_states[indices, ...]
 
             return (states, self.actions[indices], self.rewards[indices], new_states,
                     self.terminal_flags[indices]), importance, indices
@@ -78,7 +81,7 @@ class ReplayBuffer:
             indices = np.random.choice(self.count-1, size=batch_size, replace=False)
             # Retrieve states from memory
             states = self.states[indices, ...]
-            new_states = self.states[indices + 1, ...]
+            new_states = self.next_states[indices, ...]
 
             return states, self.actions[indices], self.rewards[indices], new_states, self.terminal_flags[indices]
 
@@ -91,21 +94,3 @@ class ReplayBuffer:
         assert np.size(indices) == np.size(errors)
         for i in range(np.size(indices)):
             self.priorities[indices[i]] = abs(errors[i]) + self.offset
-
-    def save(self, folder_name):
-        """Save the replay buffer to a folder"""
-
-        if not os.path.isdir(folder_name):
-            os.mkdir(folder_name)
-
-        np.save(folder_name + '/actions.npy', self.actions)
-        np.save(folder_name + '/states.npy', self.states)
-        np.save(folder_name + '/rewards.npy', self.rewards)
-        np.save(folder_name + '/terminal_flags.npy', self.terminal_flags)
-
-    def load(self, folder_name):
-        """Loads the replay buffer from a folder"""
-        self.actions = np.load(folder_name + '/actions.npy')
-        self.states = np.load(folder_name + '/states.npy')
-        self.rewards = np.load(folder_name + '/rewards.npy')
-        self.terminal_flags = np.load(folder_name + '/terminal_flags.npy')

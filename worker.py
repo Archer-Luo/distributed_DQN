@@ -41,9 +41,6 @@ class Worker:
         self.current_state = np.array(hyperparam['start_state'])
         self.t = 0
 
-    def store(self, action, state, reward, terminal):
-        self.replay_buffer.add_experience.remote(action, state, reward, terminal)
-
     def get_action(self, state_number, state, evaluation):
         eps = calc_epsilon(state_number, evaluation)
 
@@ -74,7 +71,7 @@ class Worker:
             next_state = self.env.next_state_N1(self.current_state, action)
             reward = -(self.current_state @ self.h)
             terminal = (self.t == self.max_update_steps - 1)
-            self.replay_buffer.add_experience.remote(action, self.current_state, reward, terminal)  # TODO
+            self.replay_buffer.add_experience.remote(action, self.current_state, next_state, reward, terminal)  # TODO
 
             self.current_state = next_state
 
@@ -87,7 +84,7 @@ class Worker:
             next_state = self.env.next_state_N1(self.current_state, action)
             reward = -(self.current_state @ self.h)
             terminal = (self.t == self.max_update_steps - 1)
-            self.replay_buffer.add_experience.remote(action, self.current_state, reward, terminal)  # TODO
+            self.replay_buffer.add_experience.remote(action, self.current_state, next_state, reward, terminal)  # TODO
 
             self.current_state = next_state
 
