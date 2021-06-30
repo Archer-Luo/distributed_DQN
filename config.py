@@ -15,13 +15,13 @@ hyperparam = {
     'max_update_steps': 50000,
     'C': 50,
 
-    'gamma': 0.995,
+    'gamma': 0.998,
 
     'eps_initial': 0.1,
     'eps_final': 0.1,
     'eps_final_state': 0.1,
     'eps_evaluation': 0.0,
-    'replay_buffer_start_size': 20,
+    'replay_buffer_start_size': 40,
     'eps_annealing_states': 25000,
 
     'priority_scale': 0.7,
