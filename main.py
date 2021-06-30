@@ -9,7 +9,6 @@ from NN_parameter_server import NNParamServer
 
 
 def main():
-    # parameter_server = ParamServer.remote()
     parameter_server = NNParamServer.remote()
     replay_buffer = ReplayBuffer.remote()
     workers = [Worker.remote(replay_buffer, parameter_server) for _ in range(hyperparam['num_bundle'])]

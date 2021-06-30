@@ -59,14 +59,14 @@ class ReplayBuffer:
                 An array of each index that was sampled
         """
 
-        if self.count - 1 < batch_size:
+        if self.count < batch_size:
             raise ValueError('Not enough memories to get a minibatch')
 
         # Get sampling probabilities from priority list and get a list of indices
         if self.use_per:
-            scaled_priorities = self.priorities[0:self.count-1] ** priority_scale
+            scaled_priorities = self.priorities[0:self.count] ** priority_scale
             sample_probabilities = scaled_priorities / np.sum(scaled_priorities)
-            indices = np.random.choice(self.count-1, size=batch_size, replace=False, p=sample_probabilities.flatten())
+            indices = np.random.choice(self.count, size=batch_size, replace=False, p=sample_probabilities.flatten())
             importance = np.reciprocal(self.count * sample_probabilities[indices])
             importance = importance / np.amax(importance)
             # Retrieve states from memory
@@ -75,7 +75,7 @@ class ReplayBuffer:
 
             return (states, self.actions[indices], self.rewards[indices], new_states), importance, indices
         else:
-            indices = np.random.choice(self.count-1, size=batch_size, replace=False)
+            indices = np.random.choice(self.count, size=batch_size, replace=False)
             # Retrieve states from memory
             states = self.states[indices, ...]
             new_states = self.next_states[indices, ...]
