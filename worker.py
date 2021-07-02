@@ -38,8 +38,10 @@ class Worker:
         # hyper-parameters
         self.gamma = hyperparam['gamma']
 
-        self.current_state = np.array(hyperparam['start_state'])
+        self.current_state = np.random.randint(low=0, high=100, size=2)
         self.t = 0
+
+        self.tau = hyperparam['tau']
 
     def get_action(self, state_number, state, evaluation):
         eps = calc_epsilon(state_number, evaluation)
@@ -58,13 +60,14 @@ class Worker:
         self.dqn.set_weights(new_weights)
 
     def sync_target_dqn(self):
-        new_weights = ray.get(self.param_server.get_weights.remote())
+        param_weights = ray.get(self.param_server.get_weights.remote())
+        new_weights = [(1 - self.tau) * x + self.tau * y for x, y in zip(self.target_dqn.get_weights(), param_weights)]
         self.target_dqn.set_weights(new_weights)
 
     def run(self):
         time.sleep(random.randint(0, 10))
-        self.target_dqn.set_weights(self.dqn.get_weights())
         self.dqn.set_weights(ray.get(self.param_server.get_weights.remote()))
+        self.target_dqn.set_weights(self.dqn.get_weights())
 
         while self.t < self.replay_buffer_start_size + 1:
             action = self.get_action(self.t, self.current_state, False)

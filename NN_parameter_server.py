@@ -12,3 +12,7 @@ class NNParamServer:
 
     def update_weights(self, gradient):
         self.model.optimizer.apply_gradients(zip(gradient, self.model.trainable_variables))
+
+    def update_weights_list(self, gradient_list):
+        for gradient in gradient_list:
+            self.update_weights(gradient)
