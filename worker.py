@@ -38,7 +38,7 @@ class Worker:
         # hyper-parameters
         self.gamma = hyperparam['gamma']
 
-        self.current_state = np.random.randint(low=0, high=100, size=2)
+        self.current_state = np.random.randint(low=0, high=1000, size=2)
         self.t = 0
 
         self.tau = hyperparam['tau']
