@@ -9,7 +9,7 @@ import time
 import random
 
 
-@ray.remote(num_cpus=0.5)
+@ray.remote
 class Worker:
 
     def __init__(self, replay_buffer, param_server):
@@ -38,10 +38,10 @@ class Worker:
         # hyper-parameters
         self.gamma = hyperparam['gamma']
 
-        self.current_state = np.random.randint(low=0, high=1000, size=2)
+        self.current_state = np.random.randint(low=0, high=200, size=2)
         self.t = 0
 
-        self.tau = hyperparam['tau']
+        self.epi_len = hyperparam['epi_len']
 
     def get_action(self, state_number, state, evaluation):
         eps = calc_epsilon(state_number, evaluation)
@@ -61,8 +61,7 @@ class Worker:
 
     def sync_target_dqn(self):
         param_weights = ray.get(self.param_server.get_weights.remote())
-        new_weights = [(1 - self.tau) * x + self.tau * y for x, y in zip(self.target_dqn.get_weights(), param_weights)]
-        self.target_dqn.set_weights(new_weights)
+        self.target_dqn.set_weights(param_weights)
 
     def run(self):
         time.sleep(random.randint(0, 10))
@@ -87,7 +86,10 @@ class Worker:
             reward = -(self.current_state @ self.h)
             self.replay_buffer.add_experience.remote(action, self.current_state, next_state, reward)  # TODO
 
-            self.current_state = next_state
+            if self.t % self.epi_len == 0:
+                self.current_state = np.random.randint(low=0, high=200, size=2)
+            else:
+                self.current_state = next_state
 
             self.sync_dqn()
 
@@ -139,4 +141,6 @@ class Worker:
                 self.sync_target_dqn()
                 print(('{}' + ': ' + '{:10.5f}').format(self.t, loss), flush=True)
 
-        return ray.get(self.param_server.get_weights.remote())
+        record, outside = ray.get(self.replay_buffer.get_record.remote())
+        final_weights = ray.get(self.param_server.get_weights.remote())
+        return final_weights, record, outside

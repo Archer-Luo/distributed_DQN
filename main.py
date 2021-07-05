@@ -13,10 +13,13 @@ def main():
     replay_buffer = ReplayBuffer.remote()
     workers = [Worker.remote(replay_buffer, parameter_server) for _ in range(hyperparam['num_bundle'])]
     ready_id, remaining_ids = ray.wait([worker.run.remote() for worker in workers], num_returns=1)
-    final_weights = ray.get(ready_id[0])
+    final_weights, record, outside = ray.get(ready_id[0])
 
     with open('final_weights.txt', 'w') as f:
         print(final_weights, file=f)
+
+    np.savetxt('record', record, fmt='%i', delimiter=",")
+    print('outside: '.format(outside))
 
     evaluate_dqn = dqn_maker()
     evaluate_dqn.set_weights(final_weights)
@@ -36,7 +39,7 @@ def main():
 
 start_time = time.time()
 
-ray.init(num_cpus=5, num_gpus=1)
+ray.init(num_cpus=30, num_gpus=1)
 
 if __name__ == "__main__":
     main()

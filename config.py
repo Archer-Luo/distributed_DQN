@@ -7,23 +7,23 @@ hyperparam = {
     'rho': 0.95,
 
     # Learning parameters
-    'nn_dimension': [100],
-    'nn_activation': 'relu',
+    'nn_dimension': [10, 10, 10],
+    'nn_activation': 'tanh',
 
-    'num_bundle': 10,
+    'num_bundle': 20,
 
-    'max_update_steps': 100000,
-    'C': 50,
-    'tau': 0.01,
+    'max_update_steps': 80000,
+    'C': 25,
+    'epi_len': 200,
 
     'gamma': 0.998,
 
     'eps_initial': 1,
-    'eps_final': 0,
-    'eps_final_state': 0,
+    'eps_final': 1,
+    'eps_final_state': 1,
     'eps_evaluation': 0.0,
     'replay_buffer_start_size': 200,
-    'eps_annealing_states': 90000,
+    'eps_annealing_states': 19000,
 
     'priority_scale': 0.7,
 

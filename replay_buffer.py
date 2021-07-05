@@ -4,7 +4,7 @@ import numpy as np
 from config import hyperparam
 
 
-@ray.remote(num_gpus=0.75)
+@ray.remote
 class ReplayBuffer:
     """Replay Buffer to store transitions.
     This implementation was heavily inspired by Fabio M. Graetz's replay buffer
@@ -25,6 +25,9 @@ class ReplayBuffer:
         self.next_states = np.empty((self.size, self.state_dim), dtype=np.uint8)
         self.priorities = np.ones(self.size, dtype=np.float32)
 
+        self.record = np.zeros((200, 200))
+        self.outside = 0
+
     def get_count(self):
         return self.count
 
@@ -36,7 +39,6 @@ class ReplayBuffer:
             state: A (1, 2) state
             next_state: A (1, 2) state
             reward: A float determining the reward the agent received for performing an action
-            terminal: A bool stating whether the episode terminated
         """
         if state.shape != self.input_shape:
             raise ValueError('Dimension of the state is wrong! state shape is %s and input_shape is %s' % (state.shape, self.input_shape,))
@@ -49,6 +51,11 @@ class ReplayBuffer:
         self.priorities[self.current] = max(np.amax(self.priorities), 1.0)  # make the most recent experience important
         self.count = max(self.count, self.current+1)
         self.current = (self.current + 1) % self.size
+
+        if state[0] >= 200 or state[1] >= 200:
+            self.outside += 1
+        else:
+            self.record[state[0], state[1]] += 1
 
     def get_minibatch(self, batch_size, priority_scale):
         """
@@ -91,3 +98,6 @@ class ReplayBuffer:
         assert np.size(indices) == np.size(errors)
         for i in range(np.size(indices)):
             self.priorities[indices[i]] = abs(errors[i]) + self.offset
+
+    def get_record(self):
+        return self.record, self.outside
