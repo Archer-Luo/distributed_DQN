@@ -7,6 +7,7 @@ def dqn_maker():
     n_actions = hyperparam['n_actions']
     activation = hyperparam['nn_activation']
     dimension = hyperparam['nn_dimension']
+    lr = hyperparam['lr']
 
     model = tf.keras.Sequential()
     model.add(tf.keras.Input(shape=(state_dim,)))
@@ -14,7 +15,8 @@ def dqn_maker():
         model.add(tf.keras.layers.Dense(i, activation=activation))
     model.add(tf.keras.layers.Dense(n_actions))
 
-    model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer=tf.keras.optimizers.Adam(learning_rate=0.00002))  # TODO
+    model.compile(loss=tf.keras.losses.MeanSquaredError(),
+                  optimizer=tf.keras.optimizers.Adam(learning_rate=lr))
 
     return model
 

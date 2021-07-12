@@ -10,7 +10,7 @@ def xavier_numpy(fan_in, fan_out):
     return weight
 
 
-@ray.remote
+@ray.remote(num_gpus=1)
 class ParamServer:
     def __init__(self):
         self.state_dim = hyperparam['state_dim']

@@ -15,13 +15,7 @@ class ProcessingNetwork:
         self.cumsum_rates = np.unique(np.cumsum(np.concatenate([self.p_arriving, self.p_compl])))
 
         self.A = np.asarray(A)  # each row represents activity: -1 means job is departing, +1 means job is arriving
-        self.routing_matrix = 1 * (self.A > 0)
         self.D = np.asarray(D)  # ith row represents buffers that associated to the ith stations
-
-        self.action_size = np.prod(np.sum(D, axis=1))  # total number of possible actions
-        self.action_size_per_buffer = [sum(D[i]) for i in range(len(D))]  # number of possible actions for each station
-        self.stations_num = np.shape(D)[0]  # number of stations
-        self.buffers_num = 2  # number of buffers
 
         self.holding_cost = holding_cost
         self.network_name = name

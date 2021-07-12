@@ -20,10 +20,10 @@ class ReplayBuffer:
 
         # Pre-allocate memory
         self.actions = np.empty(self.size, dtype=np.uint8)
-        self.rewards = np.empty(self.size, dtype=np.float32)
-        self.states = np.empty((self.size, self.state_dim), dtype=np.uint8)
-        self.next_states = np.empty((self.size, self.state_dim), dtype=np.uint8)
-        self.priorities = np.ones(self.size, dtype=np.float32)
+        self.rewards = np.empty(self.size, dtype=np.int32)
+        self.states = np.empty((self.size, self.state_dim), dtype=np.uint32)
+        self.next_states = np.empty((self.size, self.state_dim), dtype=np.uint32)
+        self.priorities = np.zeros(self.size, dtype=np.float32)
 
         self.record = np.zeros((200, 200))
         self.outside = 0
