@@ -46,7 +46,7 @@ class Actor:
             return np.random.randint(0, self.n_actions)
 
         # Otherwise, query the DQN for an action
-        q_vals = self.q_network.predict(np.expand_dims(state, axis=0)).squeeze()
+        q_vals = self.q_network(np.expand_dims(state, axis=0), training=False).numpy().squeeze()
         action = q_vals.argmax()
         return action
 

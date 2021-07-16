@@ -20,7 +20,7 @@ class ReplayBuffer:
 
         # Pre-allocate memory
         self.actions = np.empty(self.size, dtype=np.uint8)
-        self.rewards = np.empty(self.size, dtype=np.int32)
+        self.costs = np.empty(self.size, dtype=np.int32)
         self.states = np.empty((self.size, self.state_dim), dtype=np.uint32)
         self.next_states = np.empty((self.size, self.state_dim), dtype=np.uint32)
         self.priorities = np.zeros(self.size, dtype=np.float32)
@@ -31,14 +31,14 @@ class ReplayBuffer:
     def get_count(self):
         return self.count
 
-    def add_experience(self, action, state, next_state, reward):
+    def add_experience(self, action, state, next_state, cost):
         """Saves a transition to the replay buffer
         Arguments:
             action: An integer between 0 and env.action_space.n - 1
                 determining the action the agent performed
             state: A (1, 2) state
             next_state: A (1, 2) state
-            reward: A float determining the reward the agent received for performing an action
+            cost: A float determining the cost the agent received for performing an action
         """
         if state.shape != self.input_shape:
             raise ValueError('Dimension of the state is wrong! state shape is %s and input_shape is %s' % (state.shape, self.input_shape,))
@@ -47,7 +47,7 @@ class ReplayBuffer:
         self.actions[self.current] = action
         self.states[self.current, ...] = state
         self.next_states[self.current, ...] = next_state
-        self.rewards[self.current] = reward
+        self.costs[self.current] = cost
         self.priorities[self.current] = max(np.amax(self.priorities), 1.0)  # make the most recent experience important
         self.count = max(self.count, self.current+1)
         self.current = (self.current + 1) % self.size
@@ -60,7 +60,7 @@ class ReplayBuffer:
     def get_minibatch(self, batch_size, priority_scale):
         """
         Returns:
-            A tuple of states, actions, rewards, new_states, and terminals
+            A tuple of states, actions, costs, new_states, and terminals
             If use_per is True:
                 An array describing the importance of transition. Used for scaling gradient steps.
                 An array of each index that was sampled
@@ -80,14 +80,14 @@ class ReplayBuffer:
             states = self.states[indices, ...]
             new_states = self.next_states[indices, ...]
 
-            return (states, self.actions[indices], self.rewards[indices], new_states), importance, indices
+            return (states, self.actions[indices], self.costs[indices], new_states), importance, indices
         else:
             indices = np.random.choice(self.count, size=batch_size, replace=False)
             # Retrieve states from memory
             states = self.states[indices, ...]
             new_states = self.next_states[indices, ...]
 
-            return states, self.actions[indices], self.rewards[indices], new_states
+            return states, self.actions[indices], self.costs[indices], new_states
 
     def set_priorities(self, indices, errors):
         """Update priorities for PER

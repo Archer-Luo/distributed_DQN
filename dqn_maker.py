@@ -8,18 +8,21 @@ def dqn_maker():
     activation = hyperparam['nn_activation']
     dimension = hyperparam['nn_dimension']
     lr = hyperparam['lr']
+    initial_weights = hyperparam['initial_weights']
 
     model = tf.keras.Sequential()
     model.add(tf.keras.Input(shape=(state_dim,)))
     for i in dimension:
-        model.add(tf.keras.layers.Dense(i, activation=activation))
-    model.add(tf.keras.layers.Dense(n_actions))
+        model.add(tf.keras.layers.Dense(i, activation=activation, kernel_initializer=tf.keras.initializers.HeUniform()))
+    model.add(tf.keras.layers.Dense(n_actions, kernel_initializer=tf.keras.initializers.HeUniform(), use_bias=False))
 
     model.compile(loss=tf.keras.losses.MeanSquaredError(),
                   optimizer=tf.keras.optimizers.Adam(learning_rate=lr))
 
-    return model
+    if initial_weights is not None:
+        model.load_weights(initial_weights)
 
+    return model
 
 # dqn = dqn_maker()
 # trainable_var = dqn.trainable_variables

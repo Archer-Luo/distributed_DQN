@@ -67,7 +67,7 @@ class Learner:
                     batch_size=self.batch_size, priority_scale=self.priority_scale))
 
             # Target DQN estimates q-vals for new states
-            target_future_v = np.amax(self.target_dqn.predict(new_states).squeeze(), axis=1)
+            target_future_v = np.amax(self.target_dqn(new_states, training=False).numpy().squeeze(), axis=1)
 
             # Calculate targets (bellman equation)
             target_q = rewards + (self.gamma * target_future_v * (1 - terminal_flags))

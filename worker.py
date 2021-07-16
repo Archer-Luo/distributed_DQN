@@ -8,7 +8,7 @@ from NmodelDynamics import ProcessingNetwork
 import random
 
 
-@ray.remote
+@ray.remote(num_cpus=0.5)
 class Worker:
 
     def __init__(self, i, replay_buffer, param_server):
@@ -37,7 +37,7 @@ class Worker:
         # hyper-parameters
         self.gamma = hyperparam['gamma']
 
-        self.current_state = np.asarray([random.randint(0, 300), random.randint(0, 300)])
+        self.current_state = np.asarray([random.randint(0, 200), random.randint(0, 200)])
         self.t = 0
 
         self.epi_len = hyperparam['epi_len']
@@ -51,16 +51,22 @@ class Worker:
 
         self.id = i
 
+        self.actions = np.loadtxt('actions0.75', dtype=int, delimiter=',', usecols=range(201))
+
     def get_action(self, state_number, state, evaluation):
+        # Otherwise, query the DQN for an action
+        q_vals = self.dqn(np.expand_dims(state, axis=0), training=False).numpy().squeeze()
+        action = q_vals.argmin()
+
+        if state[0] < 150 and state[1] < 150:
+            self.param_server.add_sample.remote(action + 1 == self.actions[state[0], state[1]])
+
         eps = calc_epsilon(state_number, evaluation)
 
         # With chance epsilon, take a random action
         if np.random.rand(1) < eps:
             return np.random.randint(0, self.n_actions)
 
-        # Otherwise, query the DQN for an action
-        q_vals = self.dqn.predict(np.expand_dims(state, axis=0)).squeeze()
-        action = q_vals.argmax()
         return action
 
     def sync_dqn(self):
@@ -70,13 +76,15 @@ class Worker:
     def sync_target_dqn(self):
         param_weights = None
         while param_weights is None:
-            param_weights = ray.get(self.param_server.get_weights.remote())
+            param_weights = ray.get(self.param_server.sync.remote(self.id))
+        self.param_server.confirm.remote(self.id)
         if not self.soft:
             self.target_dqn.set_weights(param_weights)
         else:
             new_weights = [(1 - self.tau) * x + self.tau * y for x, y in
                            zip(self.target_dqn.get_weights(), param_weights)]
             self.target_dqn.set_weights(new_weights)
+        # print(self.target_dqn.get_weights())
 
     def run(self):
         # time.sleep(random.randint(0, 10))
@@ -86,11 +94,11 @@ class Worker:
         while self.t < self.replay_buffer_start_size + 1:
             action = self.get_action(self.t, self.current_state, False)
             next_state = self.env.next_state_N1(self.current_state, action)
-            reward = -(self.current_state @ self.h)
-            self.replay_buffer.add_experience.remote(action, self.current_state, next_state, reward)  # TODO
+            cost = self.current_state @ self.h
+            self.replay_buffer.add_experience.remote(action, self.current_state, next_state, cost)  # TODO
 
             if self.t % self.epi_len == 0:
-                self.current_state = np.asarray([random.randint(0, 300), random.randint(0, 300)])
+                self.current_state = np.asarray([random.randint(0, 200), random.randint(0, 200)])
             else:
                 self.current_state = next_state
 
@@ -101,11 +109,11 @@ class Worker:
         while self.t < self.max_update_steps:
             action = self.get_action(self.t, self.current_state, False)
             next_state = self.env.next_state_N1(self.current_state, action)
-            reward = -(self.current_state @ self.h)
-            self.replay_buffer.add_experience.remote(action, self.current_state, next_state, reward)  # TODO
+            cost = self.current_state @ self.h
+            self.replay_buffer.add_experience.remote(action, self.current_state, next_state, cost)  # TODO
 
             if self.t % self.epi_len == 0:
-                self.current_state = np.asarray([random.randint(0, 300), random.randint(0, 300)])
+                self.current_state = np.asarray([random.randint(0, 200), random.randint(0, 200)])
             else:
                 self.current_state = next_state
 
@@ -113,18 +121,18 @@ class Worker:
 
             if self.t % self.update_freq == 0:
                 if self.use_per:
-                    (states, actions, rewards, new_states), importance, indices = ray.get(self.replay_buffer.get_minibatch.remote(
+                    (states, actions, costs, new_states), importance, indices = ray.get(self.replay_buffer.get_minibatch.remote(
                         batch_size=self.batch_size, priority_scale=self.priority_scale))
                     importance = importance ** (1 - calc_epsilon(self.t, False))
                 else:
-                    states, actions, rewards, new_states = ray.get(self.replay_buffer.get_minibatch.remote(
+                    states, actions, costs, new_states = ray.get(self.replay_buffer.get_minibatch.remote(
                         batch_size=self.batch_size, priority_scale=self.priority_scale))
 
                 # Target DQN estimates q-vals for new states
-                target_future_v = np.amax(self.target_dqn.predict(new_states), axis=1)
+                target_future_v = np.amin(self.target_dqn(new_states, training=False).numpy().squeeze(), axis=1)
 
                 # Calculate targets (bellman equation)
-                target_q = rewards + (self.gamma * target_future_v)
+                target_q = costs + (self.gamma * target_future_v)
 
                 # Use targets to calculate loss (and use loss to calculate gradients)
                 with tf.GradientTape() as tape:
@@ -162,7 +170,7 @@ class Worker:
                 self.sync_target_dqn()
 
         record, outside = ray.get(self.replay_buffer.get_record.remote())
-
+        percentages = ray.get(self.param_server.get_percentages.remote())
         final_weights = ray.get(self.param_server.get_weights.remote())
 
-        return final_weights, record, outside
+        return final_weights, record, outside, percentages
