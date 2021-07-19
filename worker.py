@@ -37,7 +37,7 @@ class Worker:
         # hyper-parameters
         self.gamma = hyperparam['gamma']
 
-        self.current_state = np.asarray([random.randint(0, 200), random.randint(0, 200)])
+        self.current_state = np.asarray([random.randint(0, 1000), random.randint(0, 1000)])
         self.t = 0
 
         self.epi_len = hyperparam['epi_len']
@@ -51,14 +51,14 @@ class Worker:
 
         self.id = i
 
-        self.actions = np.loadtxt('actions0.75', dtype=int, delimiter=',', usecols=range(201))
+        self.actions = np.loadtxt('actions0.75', dtype=int, delimiter=',', usecols=range(1001))
 
     def get_action(self, state_number, state, evaluation):
         # Otherwise, query the DQN for an action
         q_vals = self.dqn(np.expand_dims(state, axis=0), training=False).numpy().squeeze()
         action = q_vals.argmin()
 
-        if state[0] < 150 and state[1] < 150:
+        if state[0] < 1000 and state[1] < 1000:
             self.param_server.add_sample.remote(action + 1 == self.actions[state[0], state[1]])
 
         eps = calc_epsilon(state_number, evaluation)
@@ -97,8 +97,8 @@ class Worker:
             cost = self.current_state @ self.h
             self.replay_buffer.add_experience.remote(action, self.current_state, next_state, cost)  # TODO
 
-            if self.t % self.epi_len == 0:
-                self.current_state = np.asarray([random.randint(0, 200), random.randint(0, 200)])
+            if np.array_equal(self.current_state, np.array([0, 0])):
+                self.current_state = np.asarray([random.randint(0, 1000), random.randint(0, 1000)])
             else:
                 self.current_state = next_state
 
@@ -112,8 +112,8 @@ class Worker:
             cost = self.current_state @ self.h
             self.replay_buffer.add_experience.remote(action, self.current_state, next_state, cost)  # TODO
 
-            if self.t % self.epi_len == 0:
-                self.current_state = np.asarray([random.randint(0, 200), random.randint(0, 200)])
+            if np.array_equal(self.current_state, np.array([0, 0])):
+                self.current_state = np.asarray([random.randint(0, 1000), random.randint(0, 1000)])
             else:
                 self.current_state = next_state
 

@@ -74,6 +74,8 @@ class NNParamServer:
                 percentage = self.correct / self.count * 100
                 self.percentages.append(percentage)
                 print(percentage)
+            self.count = 0
+            self.correct = 0
 
     def add_sample(self, correct):
         self.count += 1

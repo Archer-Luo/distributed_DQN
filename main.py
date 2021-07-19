@@ -9,15 +9,6 @@ from NN_parameter_server import NNParamServer
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
-# @ray.remote
-# def evaluate(dqn, a, b):
-#     state = np.array([a, b])
-#     values = dqn.predict(np.expand_dims(state, axis=0)).squeeze()
-#     action = np.argmax(values) + 1
-#     difference = values[0] - values[1]
-#     value = np.amax(values)
-#     return [action, difference, value]
-
 
 def main():
     parameter_server = NNParamServer.remote()
@@ -33,8 +24,10 @@ def main():
     # with open('final_weights.txt', 'w') as f:
     #     print(final_weights, file=f)
 
-    np.savetxt('record', record, fmt='%i', delimiter=",")
-    print('outside: {0}'.format(outside))
+    with open('record', 'w') as f:
+        np.savetxt(f, record, fmt='%i', delimiter=",")
+
+    print('outside: {0}'.format(outside), flush=True)
 
     evaluate_dqn = dqn_maker()
     evaluate_dqn.set_weights(final_weights)
@@ -42,21 +35,24 @@ def main():
     v_result = np.empty([151, 151])
     difference = np.empty([151, 151])
 
-    evaluate_dqn.save_weights('./final_weights')
+    evaluate_dqn.save_weights('final_weights_2')
 
     for a in range(151):
         for b in range(151):
             state = np.array([a, b])
             values = evaluate_dqn(np.expand_dims(state, axis=0), training=False).numpy().squeeze()
-            action_result[a][b] = np.argmin(values) + 1
-            difference[a][b] = values[0] - values[1]
-            v_result[a][b] = np.amin(values)
+            action_result[a, b] = np.argmin(values) + 1
+            difference[a, b] = values[0] - values[1]
+            v_result[a, b] = np.amin(values)
 
-    np.savetxt('rho{0}_gamma{1}_action'.format(hyperparam['rho'], hyperparam['gamma']),
-               action_result, fmt='%i', delimiter=",")
-    np.savetxt('difference', difference, fmt='%10.5f', delimiter=",")
-    np.savetxt('rho{0}_gamma{1}_value'.format(hyperparam['rho'], hyperparam['gamma']),
-               v_result, fmt='%10.5f', delimiter=",")
+    with open('rho{0}_gamma{1}_action'.format(hyperparam['rho'], hyperparam['gamma']), 'w') as f:
+        np.savetxt(f, action_result, fmt='%i', delimiter=",")
+
+    with open('difference', 'w') as f:
+        np.savetxt(f, difference, fmt='%10.5f', delimiter=",")
+
+    with open('rho{0}_gamma{1}_value'.format(hyperparam['rho'], hyperparam['gamma']), 'w') as f:
+        np.savetxt(f, v_result, fmt='%10.5f', delimiter=",")
 
 
 start_time = time.time()

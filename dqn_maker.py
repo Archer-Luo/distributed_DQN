@@ -3,13 +3,12 @@ from config import hyperparam
 
 
 def dqn_maker():
+    initial_weights = hyperparam['initial_weights']
     state_dim = hyperparam['state_dim']
     n_actions = hyperparam['n_actions']
     activation = hyperparam['nn_activation']
     dimension = hyperparam['nn_dimension']
     lr = hyperparam['lr']
-    initial_weights = hyperparam['initial_weights']
-
     model = tf.keras.Sequential()
     model.add(tf.keras.Input(shape=(state_dim,)))
     for i in dimension:
@@ -24,7 +23,3 @@ def dqn_maker():
 
     return model
 
-# dqn = dqn_maker()
-# trainable_var = dqn.trainable_variables
-# weights = dqn.get_weights()
-# print('done')

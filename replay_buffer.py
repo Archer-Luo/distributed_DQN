@@ -1,4 +1,3 @@
-import os
 import ray
 import numpy as np
 from config import hyperparam
@@ -20,12 +19,12 @@ class ReplayBuffer:
 
         # Pre-allocate memory
         self.actions = np.empty(self.size, dtype=np.uint8)
-        self.costs = np.empty(self.size, dtype=np.int32)
+        self.costs = np.empty(self.size, dtype=np.uint32)
         self.states = np.empty((self.size, self.state_dim), dtype=np.uint32)
         self.next_states = np.empty((self.size, self.state_dim), dtype=np.uint32)
         self.priorities = np.zeros(self.size, dtype=np.float32)
 
-        self.record = np.zeros((200, 200))
+        self.record = np.zeros((1000, 1000))
         self.outside = 0
 
     def get_count(self):
@@ -52,7 +51,7 @@ class ReplayBuffer:
         self.count = max(self.count, self.current+1)
         self.current = (self.current + 1) % self.size
 
-        if state[0] >= 200 or state[1] >= 200:
+        if state[0] >= 1000 or state[1] >= 1000:
             self.outside += 1
         else:
             self.record[state[0], state[1]] += 1
