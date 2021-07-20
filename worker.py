@@ -54,18 +54,15 @@ class Worker:
         self.actions = np.loadtxt('actions0.75', dtype=int, delimiter=',', usecols=range(1001))
 
     def get_action(self, state_number, state, evaluation):
-        # Otherwise, query the DQN for an action
-        q_vals = self.dqn(np.expand_dims(state, axis=0), training=False).numpy().squeeze()
-        action = q_vals.argmin()
-
-        if state[0] < 1000 and state[1] < 1000:
-            self.param_server.add_sample.remote(action + 1 == self.actions[state[0], state[1]])
-
         eps = calc_epsilon(state_number, evaluation)
 
         # With chance epsilon, take a random action
         if np.random.rand(1) < eps:
             return np.random.randint(0, self.n_actions)
+
+        # Otherwise, query the DQN for an action
+        q_vals = self.dqn(np.expand_dims(state, axis=0), training=False).numpy().squeeze()
+        action = q_vals.argmin()
 
         return action
 
@@ -97,7 +94,7 @@ class Worker:
             cost = self.current_state @ self.h
             self.replay_buffer.add_experience.remote(action, self.current_state, next_state, cost)  # TODO
 
-            if np.array_equal(self.current_state, np.array([0, 0])):
+            if self.t % self.epi_len == 0:
                 self.current_state = np.asarray([random.randint(0, 1000), random.randint(0, 1000)])
             else:
                 self.current_state = next_state
@@ -112,7 +109,7 @@ class Worker:
             cost = self.current_state @ self.h
             self.replay_buffer.add_experience.remote(action, self.current_state, next_state, cost)  # TODO
 
-            if np.array_equal(self.current_state, np.array([0, 0])):
+            if self.t % self.epi_len == 0:
                 self.current_state = np.asarray([random.randint(0, 1000), random.randint(0, 1000)])
             else:
                 self.current_state = next_state
@@ -129,7 +126,15 @@ class Worker:
                         batch_size=self.batch_size, priority_scale=self.priority_scale))
 
                 # Target DQN estimates q-vals for new states
-                target_future_v = np.amin(self.target_dqn(new_states, training=False).numpy().squeeze(), axis=1)
+                target_values = self.target_dqn(new_states, training=False).numpy().squeeze()
+                target_future_actions = np.argmin(target_values, axis=1)
+                target_future_v = target_values[range(self.batch_size), target_future_actions]
+
+                new_states_clip = np.minimum(new_states, np.full((self.batch_size, self.n_actions), 999))
+                optimum_actions = self.actions[new_states_clip[:, 0], new_states_clip[:, 1]]
+
+                correct = np.sum(target_future_actions == optimum_actions)
+                self.param_server.add_sample.remote(len(optimum_actions), correct)
 
                 # Calculate targets (bellman equation)
                 target_q = costs + (self.gamma * target_future_v)

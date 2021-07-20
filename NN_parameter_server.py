@@ -77,10 +77,9 @@ class NNParamServer:
             self.count = 0
             self.correct = 0
 
-    def add_sample(self, correct):
-        self.count += 1
-        if correct:
-            self.correct += 1
+    def add_sample(self, num_sample, num_correct):
+        self.count += num_sample
+        self.correct += num_correct
 
     def get_percentages(self):
         return self.percentages

@@ -17,7 +17,7 @@ hyperparam = {
     'max_update_steps': 100000,
     'buffer_size': 500000,
     'C': 20,
-    'epi_len': 4000,
+    'epi_len': 5000,
     'batch_size': 128,
     'update_freq': 4,
 
@@ -32,8 +32,8 @@ hyperparam = {
     'priority_scale': 0.7,
     'offset': 0.1,
 
-    'soft': False,
-    'tau': 0.2,
+    'soft': True,
+    'tau': 0.5,
 
     'clip': True,
 
