@@ -51,7 +51,7 @@ class Worker:
 
         self.id = i
 
-        self.actions = np.loadtxt('actions0.75', dtype=int, delimiter=',', usecols=range(1001))
+        self.actions = np.loadtxt('result095', dtype=int, delimiter=',', usecols=range(1001))
 
     def get_action(self, state_number, state, evaluation):
         eps = calc_epsilon(state_number, evaluation)
@@ -131,7 +131,7 @@ class Worker:
                 target_future_v = target_values[range(self.batch_size), target_future_actions]
 
                 new_states_clip = np.minimum(new_states, np.full((self.batch_size, self.n_actions), 999))
-                optimum_actions = self.actions[new_states_clip[:, 0], new_states_clip[:, 1]]
+                optimum_actions = self.actions[new_states_clip[:, 0], new_states_clip[:, 1]] - 1
 
                 correct = np.sum(target_future_actions == optimum_actions)
                 self.param_server.add_sample.remote(len(optimum_actions), correct)
