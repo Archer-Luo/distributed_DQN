@@ -19,7 +19,7 @@ class ReplayBuffer:
 
         # Pre-allocate memory
         self.actions = np.empty(self.size, dtype=np.uint8)
-        self.costs = np.empty(self.size, dtype=np.uint32)
+        self.costs = np.empty(self.size, dtype=np.float32)
         self.states = np.empty((self.size, self.state_dim), dtype=np.uint32)
         self.next_states = np.empty((self.size, self.state_dim), dtype=np.uint32)
         self.priorities = np.zeros(self.size, dtype=np.float32)

@@ -14,15 +14,12 @@ def main():
     parameter_server = NNParamServer.remote()
     replay_buffer = ReplayBuffer.remote()
     workers = [Worker.remote(i, replay_buffer, parameter_server) for i in range(hyperparam['num_bundle'])]
-    ready_id, remaining_ids = ray.wait([worker.run.remote() for worker in workers], num_returns=1)
-    final_weights, record, outside, percentages = ray.get(ready_id[0])
+    ready_id, remaining_ids = ray.wait([worker.run.remote() for worker in workers], num_returns=hyperparam['num_bundle'])
+    final_weights, record, outside, percentages = ray.get(ready_id[hyperparam['num_bundle'] - 1])
 
     plt.plot(percentages)
     plt.ylabel('percentages')
     plt.show()
-
-    # with open('final_weights.txt', 'w') as f:
-    #     print(final_weights, file=f)
 
     with open('record', 'w') as f:
         np.savetxt(f, record, fmt='%i', delimiter=",")
@@ -35,7 +32,7 @@ def main():
     v_result = np.empty([151, 151])
     difference = np.empty([151, 151])
 
-    evaluate_dqn.save_weights('final_weights_2')
+    evaluate_dqn.save_weights('final_weights_3')
 
     for a in range(151):
         for b in range(151):

@@ -16,10 +16,9 @@ def dqn_maker():
     model.add(tf.keras.layers.Dense(n_actions, kernel_initializer=tf.keras.initializers.HeUniform(), use_bias=False))
 
     model.compile(loss=tf.keras.losses.MeanSquaredError(),
-                  optimizer=tf.keras.optimizers.Adam(learning_rate=lr))
+                  optimizer=tf.keras.optimizers.Adam(learning_rate=lr, epsilon=1e-4))
 
     if initial_weights is not None:
         model.load_weights(initial_weights)
 
     return model
-

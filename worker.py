@@ -8,7 +8,7 @@ from NmodelDynamics import ProcessingNetwork
 import random
 
 
-@ray.remote(num_cpus=0.5)
+@ray.remote
 class Worker:
 
     def __init__(self, i, replay_buffer, param_server):
@@ -37,7 +37,7 @@ class Worker:
         # hyper-parameters
         self.gamma = hyperparam['gamma']
 
-        self.current_state = np.asarray([random.randint(0, 1000), random.randint(0, 1000)])
+        self.current_state = np.asarray([random.randint(0, 250), random.randint(0, 250)])
         self.t = 0
 
         self.epi_len = hyperparam['epi_len']
@@ -51,7 +51,7 @@ class Worker:
 
         self.id = i
 
-        self.actions = np.loadtxt('result095', dtype=int, delimiter=',', usecols=range(1001))
+        self.actions = np.loadtxt(hyperparam['optimum'], dtype=int, delimiter=',', usecols=range(1001))
 
     def get_action(self, state_number, state, evaluation):
         eps = calc_epsilon(state_number, evaluation)
@@ -95,7 +95,7 @@ class Worker:
             self.replay_buffer.add_experience.remote(action, self.current_state, next_state, cost)  # TODO
 
             if self.t % self.epi_len == 0:
-                self.current_state = np.asarray([random.randint(0, 1000), random.randint(0, 1000)])
+                self.current_state = np.asarray([random.randint(0, 250), random.randint(0, 250)])
             else:
                 self.current_state = next_state
 
@@ -110,7 +110,7 @@ class Worker:
             self.replay_buffer.add_experience.remote(action, self.current_state, next_state, cost)  # TODO
 
             if self.t % self.epi_len == 0:
-                self.current_state = np.asarray([random.randint(0, 1000), random.randint(0, 1000)])
+                self.current_state = np.asarray([random.randint(0, 250), random.randint(0, 250)])
             else:
                 self.current_state = next_state
 
@@ -167,7 +167,7 @@ class Worker:
                 if self.use_per:
                     self.replay_buffer.set_priorities.remote(indices, error)
 
-                print(('{}' + ': ' + '{:10.5f}').format(self.t, loss), flush=True)
+                # print(('{}' + ': ' + '{:10.5f}').format(self.t, loss), flush=True)
 
             self.t += 1
 
