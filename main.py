@@ -7,7 +7,6 @@ import numpy as np
 from dqn_maker import dqn_maker
 from NN_parameter_server import NNParamServer
 import matplotlib.pyplot as plt
-import tensorflow as tf
 
 
 def main():
@@ -54,7 +53,7 @@ def main():
 
 start_time = time.time()
 
-ray.init(num_cpus=30, num_gpus=1)
+ray.init()
 
 if __name__ == "__main__":
     main()

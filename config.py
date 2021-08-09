@@ -5,7 +5,7 @@ hyperparam = {
     'start_state': [50, 100],
     'h': [3, 1],
     'rho': 0.95,
-    'gamma': 0.995,
+    'gamma': 0.998,
 
     # Learning parameters
     'nn_dimension': [20],
@@ -25,7 +25,7 @@ hyperparam = {
     'eps_final': 0.1,
     'eps_final_state': 0.1,
     'eps_evaluation': 0.0,
-    'replay_buffer_start_size': 10000,
+    'replay_buffer_start_size': 8000,
     'eps_annealing_states': 250000,
 
     'eval': True,

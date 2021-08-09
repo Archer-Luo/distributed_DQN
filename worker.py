@@ -37,7 +37,7 @@ class Worker:
         # hyper-parameters
         self.gamma = hyperparam['gamma']
 
-        self.current_state = np.asarray([random.randint(0, 250), random.randint(0, 250)])
+        self.current_state = np.asarray([random.randint(0, 500), random.randint(0, 500)])
         self.t = 0
 
         self.epi_len = hyperparam['epi_len']
@@ -95,7 +95,7 @@ class Worker:
             self.replay_buffer.add_experience.remote(action, self.current_state, next_state, cost)  # TODO
 
             if self.t % self.epi_len == 0:
-                self.current_state = np.asarray([random.randint(0, 250), random.randint(0, 250)])
+                self.current_state = np.asarray([random.randint(0, 500), random.randint(0, 500)])
             else:
                 self.current_state = next_state
 
@@ -110,7 +110,7 @@ class Worker:
             self.replay_buffer.add_experience.remote(action, self.current_state, next_state, cost)  # TODO
 
             if self.t % self.epi_len == 0:
-                self.current_state = np.asarray([random.randint(0, 250), random.randint(0, 250)])
+                self.current_state = np.asarray([random.randint(0, 500), random.randint(0, 500)])
             else:
                 self.current_state = next_state
 

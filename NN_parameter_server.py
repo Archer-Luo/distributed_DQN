@@ -4,7 +4,6 @@ import ray
 from config import hyperparam
 import numpy as np
 import scipy.stats
-import tensorflow as tf
 
 
 @ray.remote
@@ -22,43 +21,6 @@ def simulation(actions):
         action = actions[clipped[0], clipped[1]]
         current = env.next_state_N1(current, action)
     return total / eval_len
-#
-#
-# @ray.remote
-# class Evaluator:
-#     def __init__(self):
-#         self.eval_start = np.asarray(hyperparam['eval_start'])
-#         self.eval_len = hyperparam['eval_len']
-#
-#         self.model = dqn_maker()
-#
-#         self.env = ProcessingNetwork.Nmodel_from_load(hyperparam['rho'])
-#         self.h = np.asarray(hyperparam['h'])
-#         self.memory = np.zeros((500, 500))
-#
-#     def reset(self, weights):
-#         self.model.set_weights(weights)
-#         self.memory = np.zeros((500, 500))
-#
-#     async def simulation(self):
-#         total = 0.0
-#         current = self.eval_start
-#         for j in range(self.eval_len):
-#             if j % 1000 == 0:
-#                 print(j)
-#             total += current @ self.h
-#             if current[0] < 500 and current[1] < 500:
-#                 if self.memory[current[0], current[1]] != 0:
-#                     action = self.memory[current[0], current[1]] - 1
-#                 else:
-#                     values = self.model(np.expand_dims(current, axis=0), training=False).numpy().squeeze()
-#                     self.memory[current[0], current[1]] = np.argmin(values) + 1
-#                     action = np.argmin(values) + 1
-#             else:
-#                 values = self.model(np.expand_dims(current, axis=0), training=False).numpy().squeeze()
-#                 action = np.argmin(values) + 1
-#             current = self.env.next_state_N1(current, action)
-#         return total / self.eval_len
 
 
 @ray.remote
@@ -94,7 +56,7 @@ class NNParamServer:
         stat, p = scipy.stats.ttest_ind(means, self.best_sample, equal_var=False)
         print('stat: ' + str(stat))
         print('p: ' + str(p))
-        if p < 0.2:
+        if p < 0.1:
             if stat > 0:
                 self.model.load_weights(self.checkpoint)
                 print('worse performance')
@@ -104,21 +66,6 @@ class NNParamServer:
                 print('better performance')
         else:
             print('same performance')
-
-
-        # new_mean = np.mean(means)
-        # new_std = np.std(means)
-        # new_ceil = new_mean + self.t_val * new_std
-        # new_fl = new_mean - self.t_val * new_std
-        # print('[' + str(new_fl) + ', ' + str(new_ceil) + ']')
-        # if new_ceil < self.best_fl:
-        #     self.best_ceil = new_ceil
-        #     self.best_fl = new_fl
-        #     self.model.save_weights(self.checkpoint)
-        # elif new_fl > self.best_ceil:
-        #     self.model.load_weights(self.checkpoint)
-        # else:
-        #     pass
 
     def get_weights(self):
         return self.model.get_weights()
@@ -162,6 +109,3 @@ class NNParamServer:
 
     def get_percentages(self):
         return self.percentages
-
-    # def get_errors(self):
-    #     return ray.get(self.evaluator.get_errors.remote())
